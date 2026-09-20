@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Margem Real Shopee + Mercado Livre | Cobrar Certo</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/config.js"></script>
+<style>
+ .res{width:100%;border-collapse:collapse;font-size:14px} .res th,.res td{padding:7px 3px;white-space:nowrap;border-bottom:1px solid var(--line);text-align:right}
+ .res th:first-child,.res td:first-child{text-align:left;white-space:normal} .res{font-size:13px} .res thead th{font-size:13px;color:var(--muted)}
+ .pos{color:var(--brand-ink);font-weight:800} .neg{color:var(--danger);font-weight:800}
+ .big{font-size:18px;font-weight:800} .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--brand-soft);color:var(--brand-ink)}
+ .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px} details summary{font-weight:700;cursor:pointer}
+ .hist li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)} .hist{list-style:none;padding:0;margin:0}
+ .linkbtn{background:none;border:0;color:var(--brand-ink);font-weight:700;cursor:pointer;padding:0}
+</style>
+</head><body><main class="wrap">
+<header class="top"><strong class="logo">Cobrar Certo · Marketplace</strong><span class="small muted">margem real por venda</span></header>
+
+<section class="card">
+  <h2>Seu produto</h2>
+  <label>Nome do produto (opcional)<input id="nome" type="text" placeholder="Ex.: Kit 3 potes herméticos"></label>
+  <div class="grid2">
+    <label>Preço de venda (R$)<input id="preco" type="number" inputmode="decimal" step="0.01" value="79.90"></label>
+    <label>Custo do produto (R$)<input id="custo" type="number" inputmode="decimal" step="0.01" value="30"></label>
+    <label>Embalagem (R$)<input id="embalagem" type="number" inputmode="decimal" step="0.01" value="2"></label>
+    <label>Frete/envio que você paga (R$)<input id="frete" type="number" inputmode="decimal" step="0.01" value="0"></label>
+    <label>Imposto (% da venda)<input id="imposto_pct" type="number" inputmode="decimal" step="0.1" value="6"></label>
+    <label>Anúncios/Ads (% da venda)<input id="ads_pct" type="number" inputmode="decimal" step="0.1" value="0"></label>
+    <label>Outros custos por unidade (R$)<input id="outros" type="number" inputmode="decimal" step="0.01" value="0"></label>
+    <label>Margem que você quer (%)<input id="margem" type="number" inputmode="decimal" step="1" value="20"></label>
+  </div>
+</section>
+
+<section class="card" id="out"></section>
+
+<section class="card">
+  <details>
+    <summary>Taxas usadas (confira na sua conta e ajuste)</summary>
+    <p class="small muted">Padrões de set/2026 publicados em fontes públicas. Taxas mudam e variam por categoria: confira na Central do Vendedor da Shopee e no simulador de custos do Mercado Livre. Tudo aqui é editável e fica salvo no seu aparelho.</p>
+    <h3>Shopee (por faixa de preço)</h3>
+    <div id="bands"></div>
+    <label>Adicional por item para CPF (R$)<input id="cpf_extra" type="number" step="0.01" value="0"></label>
+    <p class="small muted">Use 3 se você vende como CPF e passou de 450 pedidos em 90 dias.</p>
+    <h3>Mercado Livre</h3>
+    <div class="grid2">
+      <label>Clássico: comissão (%)<input id="mlc_pct" type="number" step="0.1" value="13"></label>
+      <label>Clássico: custo por unidade (R$)<input id="mlc_fixo" type="number" step="0.01" value="0"></label>
+      <label>Premium: comissão (%)<input id="mlp_pct" type="number" step="0.1" value="18"></label>
+      <label>Premium: custo por unidade (R$)<input id="mlp_fixo" type="number" step="0.01" value="0"></label>
+    </div>
+    <p class="small muted">A comissão do ML varia por categoria (Clássico ~10–14%, Premium ~15–19%). Desde mar/2026 o custo por unidade depende de peso, medidas e preço: pegue o valor do seu anúncio no simulador do ML.</p>
+    <button class="btn ghost" id="reset">Voltar aos padrões</button>
+  </details>
+</section>
+
+<section class="card">
+  <h2>Seus produtos salvos</h2>
+  <button class="btn" id="salvar">Salvar este produto</button>
+  <ul class="hist" id="hist"></ul>
+  <p class="small muted">Fica salvo só neste aparelho. Nada é enviado para nós.</p>
+</section>
+<p class="small muted" style="text-align:center">Estimativa a partir dos dados informados. A decisão do preço é sua.</p>
+</main>
+<script type="module">
+import { DEFAULTS, sale, minPrice } from './engine.js';
+import { track } from '../../assets/track.js';
+const $ = (id) => document.getElementById(id);
+const KEY = 'cobrarcerto.margem.v1';
+const brl = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
+const store = (o) => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch {} };
+let S = load();
+const bandIds = DEFAULTS.shopee.bands.map((_, i) => i);
+$('bands').innerHTML = DEFAULTS.shopee.bands.map((b, i) => {
+  const next = DEFAULTS.shopee.bands[i + 1];
+  const faixa = next ? `${brl(b[0])} a ${brl(next[0] - 0.01)}` : `a partir de ${brl(b[0])}`;
+  return `<p class="small" style="margin:10px 0 0"><strong>${faixa}</strong></p><div class="grid2">
+    <label>Comissão (%)<input id="sb${i}p" type="number" step="0.1" value="${b[1]}"></label>
+    <label>Taxa fixa (R$)<input id="sb${i}f" type="number" step="0.01" value="${b[2]}"></label></div>`;
+}).join('');
+const FEE_IDS = ['cpf_extra', 'mlc_pct', 'mlc_fixo', 'mlp_pct', 'mlp_fixo', ...bandIds.flatMap((i) => [`sb${i}p`, `sb${i}f`])];
+const P_IDS = ['nome', 'preco', 'custo', 'embalagem', 'frete', 'imposto_pct', 'ads_pct', 'outros', 'margem'];
+for (const id of [...FEE_IDS, ...P_IDS]) if (S.f?.[id] !== undefined) $(id).value = S.f[id];
+
+function fees() {
+  return {
+    shopee: { bands: DEFAULTS.shopee.bands.map((b, i) => [b[0], +$(`sb${i}p`).value, +$(`sb${i}f`).value]), cpf_extra: +$('cpf_extra').value },
+    ml_classico: { pct: +$('mlc_pct').value, fixo: +$('mlc_fixo').value },
+    ml_premium: { pct: +$('mlp_pct').value, fixo: +$('mlp_fixo').value },
+  };
+}
+const params = () => Object.fromEntries(P_IDS.filter((k) => k !== 'nome').map((k) => [k, +$(k).value]));
+const CANAIS = [['shopee', 'Shopee'], ['ml_classico', 'ML Clássico'], ['ml_premium', 'ML Premium']];
+let used = false;
+function calc(user = false) {
+  const p = params(), F = fees();
+  const rs = CANAIS.map(([c]) => sale(c, p, F));
+  const mins = CANAIS.map(([c]) => minPrice(c, p, p.margem, F));
+  const cls = (v) => (v >= 0 ? 'pos' : 'neg');
+  $('out').innerHTML = `<h2>Quanto sobra vendendo a ${brl(p.preco)}</h2>
+  <table class="res"><thead><tr><th></th>${CANAIS.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead><tbody>
+  <tr><td>Comissão</td>${rs.map((r) => `<td>− ${brl(r.comissao)}</td>`).join('')}</tr>
+  <tr><td>Taxa fixa / por unidade</td>${rs.map((r) => `<td>− ${brl(r.taxa_fixa)}</td>`).join('')}</tr>
+  <tr><td>Imposto + Ads</td>${rs.map((r) => `<td>− ${brl(r.imposto + r.ads)}</td>`).join('')}</tr>
+  <tr><td>Produto + embalagem + frete + outros</td>${rs.map((r) => `<td>− ${brl(r.custos)}</td>`).join('')}</tr>
+  <tr><td><strong>Lucro por venda</strong></td>${rs.map((r) => `<td class="${cls(r.lucro)}">${brl(r.lucro)}</td>`).join('')}</tr>
+  <tr><td><strong>Margem real</strong></td>${rs.map((r) => `<td class="${cls(r.lucro)}">${r.margem_pct.toLocaleString('pt-BR')}%</td>`).join('')}</tr>
+  </tbody></table>
+  <h2 style="margin-top:16px">Preço mínimo para ter ${p.margem}% de margem</h2>
+  <div class="row3">${CANAIS.map(([, l], i) => `<div><div class="small muted">${l}</div><div class="big">${mins[i] == null ? '—' : brl(mins[i])}</div></div>`).join('')}</div>
+  ${rs.some((r) => r.lucro < 0) ? `<p class="neg" style="margin-top:12px">Atenção: neste preço você tem prejuízo em ${rs.filter((r) => r.lucro < 0).map((r) => CANAIS.find(([c]) => c === r.canal)[1]).join(', ')}.</p>` : ''}
+  <p class="small muted" style="margin-top:10px">Na Shopee a taxa muda conforme a faixa de preço, então o preço mínimo já considera a faixa certa.${F.ml_classico.fixo === 0 && F.ml_premium.fixo === 0 ? ' <strong>Mercado Livre:</strong> o custo por unidade/envio está zerado. Se o seu anúncio tem esse custo, informe em "Taxas usadas" para não superestimar o lucro.' : ''}</p>`;
+  S.f = Object.fromEntries([...FEE_IDS, ...P_IDS].map((id) => [id, $(id).value])); store(S);
+  if (user && !used) { used = true; track('tool_use', { tool: 'margem' }); }
+}
+for (const id of [...FEE_IDS, ...P_IDS]) $(id).addEventListener('input', () => calc(true));
+$('reset').addEventListener('click', () => { S.f = Object.fromEntries(Object.entries(S.f || {}).filter(([k]) => P_IDS.includes(k))); store(S); location.reload(); });
+function hist() {
+  const h = S.h || [];
+  $('hist').innerHTML = h.length ? h.map((x, i) => `<li><span><button class="linkbtn" data-open="${i}">${esc(x.nome || 'Produto ' + (i + 1))}</button><br><span class="small muted">${brl(x.p.preco)} · Shopee ${brl(x.r[0])} · ML ${brl(x.r[1])} / ${brl(x.r[2])}</span></span><button class="linkbtn" data-del="${i}">apagar</button></li>`).join('') : '<li class="small muted">Nenhum produto salvo ainda.</li>';
+}
+$('salvar').addEventListener('click', () => {
+  const p = params(), F = fees();
+  (S.h ||= []).unshift({ nome: $('nome').value, p, r: CANAIS.map(([c]) => sale(c, p, F).lucro) });
+  S.h = S.h.slice(0, 200); store(S); hist();
+});
+$('hist').addEventListener('click', (e) => {
+  const o = e.target.dataset.open, d = e.target.dataset.del;
+  if (o !== undefined) { const x = S.h[o]; $('nome').value = x.nome; for (const [k, v] of Object.entries(x.p)) $(k).value = v; calc(); scrollTo(0, 0); }
+  if (d !== undefined) { S.h.splice(d, 1); store(S); hist(); }
+});
+calc(); hist();
+</script>
+</body></html>
