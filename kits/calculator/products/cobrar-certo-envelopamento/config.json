@@ -1,0 +1,260 @@
+{
+  "id": "cobrar-certo-envelopamento",
+  "stage": "commercial_approved",
+  "title": "Orçamento de Envelopamento",
+  "brand": "Cobrar Certo",
+  "labels": {
+    "doc_title": "Orçamento",
+    "job_fields": {
+      "cliente": "Cliente",
+      "veiculo": "Veículo"
+    }
+  },
+  "modes": [
+    {
+      "id": "total",
+      "label": "Completo"
+    },
+    {
+      "id": "parcial",
+      "label": "Parcial"
+    },
+    {
+      "id": "adesivacao",
+      "label": "Adesivação m²"
+    }
+  ],
+  "settings": [
+    {
+      "id": "empresa",
+      "type": "text",
+      "label": "Nome da empresa"
+    },
+    {
+      "id": "whats",
+      "type": "text",
+      "label": "Seu WhatsApp (com DDD)"
+    },
+    {
+      "id": "preco_ml",
+      "type": "number",
+      "label": "Preço do vinil (R$ por metro linear)",
+      "default": 75,
+      "min": 0,
+      "step": 0.01
+    },
+    {
+      "id": "perda_pct",
+      "type": "number",
+      "label": "Perda de material (%)",
+      "default": 15,
+      "min": 0,
+      "max": 100
+    },
+    {
+      "id": "garantia",
+      "type": "text",
+      "label": "Garantia (texto)",
+      "placeholder": "Ex.: 3 anos no material e na aplicação"
+    }
+  ],
+  "fields": [
+    {
+      "id": "porte",
+      "type": "select",
+      "label": "Porte do veículo",
+      "modes": [
+        "total"
+      ],
+      "default": "hatch",
+      "options": [
+        {
+          "value": "hatch",
+          "label": "Hatch compacto (Onix, HB20, Gol)"
+        },
+        {
+          "value": "sedan",
+          "label": "Sedã (Corolla, Virtus, Cruze)"
+        },
+        {
+          "value": "suv",
+          "label": "SUV (Compass, Creta, T-Cross)"
+        },
+        {
+          "value": "picape",
+          "label": "Picape (Hilux, S10, Strada cab. dupla)"
+        },
+        {
+          "value": "van",
+          "label": "Van / furgão (Master, Sprinter)"
+        }
+      ]
+    },
+    {
+      "id": "pecas",
+      "type": "qty-list",
+      "label": "Peças",
+      "modes": [
+        "parcial"
+      ],
+      "required": true,
+      "required_message": "Escolha pelo menos uma peça.",
+      "options": [
+        {
+          "value": "teto",
+          "label": "Teto"
+        },
+        {
+          "value": "capo",
+          "label": "Capô"
+        },
+        {
+          "value": "portamalas",
+          "label": "Tampa do porta-malas"
+        },
+        {
+          "value": "retrovisores",
+          "label": "Par de retrovisores"
+        },
+        {
+          "value": "colunas",
+          "label": "Colunas"
+        },
+        {
+          "value": "chromedelete",
+          "label": "Chrome delete (frisos)"
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "type": "number",
+      "label": "Área impressa (m²)",
+      "modes": [
+        "adesivacao"
+      ],
+      "required": true,
+      "positive": true,
+      "min": 0,
+      "step": 0.1
+    },
+    {
+      "id": "preco_m2",
+      "type": "number",
+      "label": "Custo do m² impresso + laminado (R$)",
+      "modes": [
+        "adesivacao"
+      ],
+      "default": 90,
+      "min": 0
+    },
+    {
+      "id": "horas_m2",
+      "type": "number",
+      "label": "Horas de aplicação por m²",
+      "modes": [
+        "adesivacao"
+      ],
+      "default": 0.8,
+      "min": 0,
+      "step": 0.1
+    },
+    {
+      "id": "horas_ajuste",
+      "type": "number",
+      "label": "Horas extras (desmontagem etc.)",
+      "default": 0,
+      "min": 0,
+      "step": 0.5
+    },
+    {
+      "id": "extras",
+      "type": "number",
+      "label": "Extras em R$ (deslocamento, remoção)",
+      "default": 0,
+      "min": 0
+    }
+  ],
+  "job_info": [
+    {
+      "id": "cliente",
+      "label": "Cliente"
+    },
+    {
+      "id": "veiculo",
+      "label": "Veículo (modelo/placa)"
+    },
+    {
+      "id": "detalhe",
+      "label": "Material / cor",
+      "placeholder": "Ex.: preto fosco premium"
+    },
+    {
+      "id": "prazo",
+      "label": "Prazo",
+      "placeholder": "Ex.: entrega no mesmo dia"
+    }
+  ],
+  "tables": {
+    "portes": {
+      "hatch": {
+        "nome": "Hatch compacto",
+        "ml": 16,
+        "horas": 16
+      },
+      "sedan": {
+        "nome": "Sedã",
+        "ml": 18,
+        "horas": 18
+      },
+      "suv": {
+        "nome": "SUV",
+        "ml": 21,
+        "horas": 21
+      },
+      "picape": {
+        "nome": "Picape",
+        "ml": 22,
+        "horas": 22
+      },
+      "van": {
+        "nome": "Van / furgão",
+        "ml": 28,
+        "horas": 26
+      }
+    },
+    "pecas": {
+      "teto": {
+        "nome": "Teto",
+        "ml": 2.2,
+        "horas": 2
+      },
+      "capo": {
+        "nome": "Capô",
+        "ml": 1.8,
+        "horas": 1.5
+      },
+      "portamalas": {
+        "nome": "Tampa do porta-malas",
+        "ml": 1.5,
+        "horas": 1.5
+      },
+      "retrovisores": {
+        "nome": "Par de retrovisores",
+        "ml": 0.6,
+        "horas": 1
+      },
+      "colunas": {
+        "nome": "Colunas",
+        "ml": 1.0,
+        "horas": 1.5
+      },
+      "chromedelete": {
+        "nome": "Chrome delete (frisos)",
+        "ml": 0.8,
+        "horas": 3
+      }
+    }
+  },
+  "disclaimer": "Valores padrão são médias de mercado para começar; ajuste à sua realidade. O preço é uma estimativa comercial e a decisão final é sua."
+}
