@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Calculator Kit</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/config.js"></script>
+</head><body><div id="root"></div>
+<script type="module">
+// Casca genérica: ?kit=<id> carrega examples/<id>/config.json + rules.js (ou products/<id>/ no futuro).
+import { renderApp } from './renderer/index.js';
+import { track } from '../../assets/track.js';
+const id = new URLSearchParams(location.search).get('kit') || 'vehicle-wrapping-demo';
+if (!/^[a-z0-9-]+$/.test(id)) throw new Error('kit inválido');
+// produtos comerciais em products/<id>/; demos internas em examples/<id>/
+let base = `./products/${id}/`;
+let res = await fetch(base + 'config.json');
+if (!res.ok) { base = `./examples/${id}/`; res = await fetch(base + 'config.json'); }
+const config = await res.json();
+const rules = await import(base + 'rules.js');
+document.title = config.title + (config.stage === 'internal_demo' ? ' (DEMO)' : '');
+renderApp({ root: document.getElementById('root'), config, rules, track });
+</script></body></html>
